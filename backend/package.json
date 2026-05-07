@@ -1,6 +1,7 @@
 {
   "name": "sitegrab-pro-backend",
   "version": "1.0.0",
+  "type": "commonjs",
   "description": "SiteGrab Pro - Backend API Server",
   "main": "src/server.js",
   "scripts": {

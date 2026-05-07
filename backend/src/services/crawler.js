@@ -3,7 +3,6 @@
 // ─────────────────────────────────────────
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-const chromium = require('@sparticuz/chromium');
 const cheerio = require('cheerio');
 const axios = require('axios');
 const { URL } = require('url');
@@ -61,10 +60,15 @@ class CrawlerService {
 
     // ── Launch browser ───────────────────────
     const isDev = process.env.NODE_ENV === 'development' || !process.env.VERCEL;
+    let chromium = null;
+
+    if (!isDev) {
+      chromium = await import('@sparticuz/chromium');
+    }
     
     const browser = await puppeteer.launch({
       args: isDev ? ['--no-sandbox'] : chromium.args,
-      defaultViewport: chromium.defaultViewport,
+      defaultViewport: isDev ? null : chromium.defaultViewport,
       executablePath: isDev ? undefined : await chromium.executablePath(),
       headless: isDev ? true : chromium.headless,
       ignoreHTTPSErrors: true,
