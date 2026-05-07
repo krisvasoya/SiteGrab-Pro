@@ -1,6 +1,7 @@
 // components/Header.jsx
 import React, { useState, useEffect } from 'react';
-import { Sun, Moon, Code2, Hexagon } from 'lucide-react';
+import { Sun, Moon, Code2 } from 'lucide-react';
+import Logo from './Logo';
 import './Header.css';
 
 export default function Header() {
@@ -21,7 +22,7 @@ export default function Header() {
     <header className="site-header glass">
       <div className="header-inner">
         <div className="header-logo">
-          <Hexagon className="logo-icon" size={28} strokeWidth={2.5} />
+          <Logo className="logo-icon" size={32} />
           <span className="logo-text">SiteGrab <strong>Pro</strong></span>
         </div>
 
