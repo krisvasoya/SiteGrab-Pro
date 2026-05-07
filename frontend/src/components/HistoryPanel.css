@@ -1,0 +1,57 @@
+/* HistoryPanel.css */
+.history-card { border-radius: var(--r-lg); padding: 20px 24px; margin-top: 8px; }
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.history-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.history-clear {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: color var(--t-fast);
+}
+.history-clear:hover { color: var(--error); }
+
+.history-list { list-style: none; }
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.history-item:hover { background: var(--bg-hover); }
+
+.history-icon { font-size: 0.9rem; flex-shrink: 0; }
+
+.history-url {
+  flex: 1;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-item:hover .history-url { color: var(--accent); }
+
+.history-time {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}

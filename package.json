@@ -1,0 +1,17 @@
+{
+  "name": "sitegrab-pro-monorepo",
+  "version": "1.0.0",
+  "description": "Professional monorepo for SiteGrab Pro",
+  "scripts": {
+    "setup": "npm install && npm run install:frontend && npm run install:backend",
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && npm install",
+    "start:frontend": "cd frontend && npm start",
+    "start:backend": "cd backend && npm start",
+    "start": "npx concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "dev": "npm start"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

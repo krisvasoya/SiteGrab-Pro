@@ -1,0 +1,129 @@
+/* ─────────────────────────────────────────
+   App.css — Component Styles
+   ───────────────────────────────────────── */
+
+/* ── Layout ────────────────────────────── */
+.app-wrapper {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+}
+
+.app-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 0 20px 80px;
+  width: 100%;
+}
+
+/* ── Cards ─────────────────────────────── */
+.card-main {
+  border-radius: var(--r-xl);
+  padding: 36px;
+  margin-bottom: 24px;
+}
+
+.card {
+  border-radius: var(--r-lg);
+  padding: 28px;
+  margin-bottom: 20px;
+}
+
+/* ── Process Button ─────────────────────── */
+.btn-process {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px 28px;
+  margin-top: 24px;
+  background: linear-gradient(135deg, var(--accent) 0%, #2D3F2F 100%);
+  color: #E2D9CB;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border: none;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: all var(--t-base);
+  box-shadow: 0 4px 20px rgba(65, 91, 68, 0.25);
+}
+
+.btn-process:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--accent-hover) 0%, var(--accent) 100%);
+  box-shadow: var(--accent-glow);
+  transform: translateY(-1px);
+}
+
+.btn-process:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Settings Toggle ────────────────────── */
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-top: 12px;
+  transition: color var(--t-fast);
+}
+
+.settings-toggle:hover { color: var(--accent); }
+
+.settings-icon { font-size: 1rem; }
+
+.chevron {
+  display: inline-block;
+  font-size: 1.2rem;
+  transition: transform var(--t-base);
+  transform: rotate(90deg);
+}
+.chevron.open { transform: rotate(-90deg); }
+
+/* ── Error Banner ──────────────────────── */
+.error-banner {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: rgba(158, 75, 75, 0.1);
+  border: 1px solid rgba(158, 75, 75, 0.25);
+  border-radius: var(--r-sm);
+  color: var(--error);
+  font-size: 0.875rem;
+}
+
+/* ── Spinner ───────────────────────────── */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(226, 217, 203, 0.3);
+  border-top-color: #E2D9CB;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Responsive ─────────────────────────── */
+@media (max-width: 640px) {
+  .card-main { padding: 24px 20px; border-radius: var(--r-lg); }
+  .card       { padding: 20px 16px; }
+}
