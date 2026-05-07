@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+const chromium = require('@sparticuz/chromium');
 const cheerio = require('cheerio');
 const axios = require('axios');
 const { URL } = require('url');
@@ -10,7 +11,14 @@ const { parseRobotsTxt, isAllowed } = require('../utils/robotsParser');
 const { extractAssetUrls } = require('./assetCollector');
 const { downloadAssets } = require('./downloader');
 
-puppeteer.use(StealthPlugin());
+// ── Stealth Setup ───────────────────────
+// On Vercel, some stealth evasions cause 'Module Not Found' errors due to bundling.
+const stealth = StealthPlugin();
+stealth.enabledEvasions.delete('chrome.app');
+stealth.enabledEvasions.delete('chrome.csi');
+stealth.enabledEvasions.delete('chrome.loadTimes');
+stealth.enabledEvasions.delete('chrome.runtime');
+puppeteer.use(stealth);
 
 const MAX_PAGES      = parseInt(process.env.MAX_PAGES_DEFAULT) || 20;
 const CRAWL_DELAY_MS = parseInt(process.env.CRAWL_DELAY_MS)    || 800;
@@ -52,29 +60,13 @@ class CrawlerService {
     }
 
     // ── Launch browser ───────────────────────
-    // pipe:true + root user fixes crashpad. Keep flags minimal for stability.
-    const launchArgs = [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-      '--disable-crash-reporter',
-      '--disable-extensions',
-      '--disable-background-timer-throttling',
-      '--disable-backgrounding-occluded-windows',
-      '--disable-renderer-backgrounding',
-    ];
-
-    const executablePath = process.env.USE_SYSTEM_CHROME === 'true'
-      ? (process.env.CHROME_PATH || '/usr/bin/chromium')
-      : undefined;
-
+    const isDev = process.env.NODE_ENV === 'development' || !process.env.VERCEL;
+    
     const browser = await puppeteer.launch({
-      headless: true,
-      executablePath,
-      args: launchArgs,
-      pipe: true,
-      timeout: PUP_TIMEOUT,
+      args: isDev ? ['--no-sandbox'] : chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: isDev ? undefined : await chromium.executablePath(),
+      headless: isDev ? true : chromium.headless,
       ignoreHTTPSErrors: true,
     });
 
