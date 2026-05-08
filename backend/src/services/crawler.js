@@ -146,7 +146,10 @@ class CrawlerService {
 
               if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') return;
 
-              if (parsedUrl.hostname === hostname && !this.visited.has(absoluteUrl)) {
+              const assetHostname = parsedUrl.hostname.replace(/^www\./, '');
+              const baseHostname  = hostname.replace(/^www\./, '');
+
+              if (assetHostname === baseHostname && !this.visited.has(absoluteUrl)) {
                 this.visited.add(absoluteUrl);
                 queue.push({ url: absoluteUrl, depth: currentDepth + 1 });
               }

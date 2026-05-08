@@ -50,7 +50,13 @@ function extractAssetUrls($, pageUrl, enabledTypes, hostname) {
     if (!rawHref || rawHref.startsWith('data:') || rawHref.startsWith('blob:')) return;
     try {
       const abs = new URL(rawHref.trim(), pageUrl).href;
-      if (new URL(abs).hostname === hostname) urls.add(abs);
+      const assetHostname = new URL(abs).hostname.replace(/^www\./, '');
+      const baseHostname  = hostname.replace(/^www\./, '');
+      
+      // Allow if same base domain (e.g. www.gcet.ac.in and gcet.ac.in)
+      if (assetHostname === baseHostname) {
+        urls.add(abs);
+      }
     } catch { /* ignore */ }
   };
 
