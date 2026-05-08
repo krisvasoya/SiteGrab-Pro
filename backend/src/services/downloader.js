@@ -59,7 +59,7 @@ async function downloadOne(url, hostname) {
       throw err;
     }
 
-    return { url, localPath: urlToLocalPath(url, hostname), buffer };
+    return { url, localPath: urlToLocalPath(url), buffer };
   } catch (err) {
     err._url = url;
     throw err;
@@ -70,7 +70,7 @@ async function downloadOne(url, hostname) {
  * Converts an absolute URL to a relative local path, mirroring the site hierarchy.
  * https://example.com/css/main.css → css/main.css
  */
-function urlToLocalPath(rawUrl, hostname) {
+function urlToLocalPath(rawUrl) {
   const parsed = new URL(rawUrl);
   let filePath  = parsed.pathname;
 
