@@ -2,7 +2,9 @@
 import { useState, useCallback, useRef } from 'react';
 import { addToHistory } from '../components/HistoryPanel';
 
-const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5000' : '/_/backend');
+const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://sitegrab-pro.onrender.com');
+
+console.log('SiteGrab Pro API URL:', API_URL);
 
 export function useCrawl() {
   const [status,   setStatus]   = useState('idle');    // idle | crawling | done | error
