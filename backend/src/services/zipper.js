@@ -33,7 +33,7 @@ class ZipperService {
       // ── HTML pages ───────────────────────────
       const seenPaths = new Set();
       for (const { url, html } of pages) {
-        let localPath = urlToLocalPath(url, new URL(url).hostname);
+        let localPath = urlToLocalPath(url);
         if (seenPaths.has(localPath)) continue;
         seenPaths.add(localPath);
 
@@ -99,7 +99,7 @@ class ZipperService {
     const manifest = {
       generatedAt: new Date().toISOString(),
       sourceUrl: this.originalUrl,
-      pages: pages.map((p) => ({ url: p.url, localPath: urlToLocalPath(p.url, new URL(p.url).hostname) })),
+      pages: pages.map((p) => ({ url: p.url, localPath: urlToLocalPath(p.url) })),
       assets: assets.map((a) => ({ url: a.url, localPath: a.localPath, sizeBytes: a.buffer.length })),
     };
     return Buffer.from(JSON.stringify(manifest, null, 2), 'utf8');
