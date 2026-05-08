@@ -126,7 +126,7 @@ class CrawlerService {
         const $ = cheerio.load(html);
 
         // Collect assets
-        const pageAssets = extractAssetUrls($, currentUrl, this.assetTypes, hostname);
+        const pageAssets = extractAssetUrls($, currentUrl, this.assetTypes);
         pageAssets.forEach((u) => this.assetUrls.add(u));
 
         this.pages.push({ url: currentUrl, html });

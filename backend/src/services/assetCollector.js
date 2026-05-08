@@ -46,7 +46,7 @@ const ATTR_MAP = {
  * Collects assets from ANY domain — not just same hostname.
  * This is critical for sites that load assets from CDNs or subdomains.
  */
-function extractAssetUrls($, pageUrl, enabledTypes, hostname) {
+function extractAssetUrls($, pageUrl, enabledTypes) {
   const urls = new Set();
 
   const addUrl = (rawHref) => {
