@@ -1,0 +1,196 @@
+/* IntroLoader.css — Mindblowing Constellation Loader */
+.intro-loader-wrapper {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+/* ── Interactive HTML Canvas (z-index 1) ── */
+.loader-constellation-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ── Radial gradient light blobs (z-index 2) ── */
+.loader-mesh-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 22% 28%, rgba(65, 91, 68, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 78% 72%, rgba(139, 111, 71, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(65, 91, 68, 0.04) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ── Centre content stack (z-index 10, above canvas) ── */
+.loader-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  z-index: 10;
+  position: relative;
+}
+
+/* ── Spinning rings container ── */
+.icon-pulse-wrapper {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+/* Shared ring base */
+.concentric-ring {
+  position: absolute;
+  border-radius: 50%;
+}
+
+/* Outer slow ring */
+.concentric-ring.outer {
+  width: 170px;
+  height: 170px;
+  border: 1px dashed rgba(65, 91, 68, 0.25);
+}
+
+/* Middle counter-rotating ring */
+.concentric-ring.middle {
+  width: 130px;
+  height: 130px;
+  border: 2px dotted rgba(139, 111, 71, 0.22);
+}
+
+/* ── Central logo medallion ── */
+.main-loader-icon {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), 0 0 28px rgba(65, 91, 68, 0.14);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Scan-line shimmer across the icon */
+.main-loader-icon::after {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, transparent 0%, rgba(65, 91, 68, 0.18) 50%, transparent 100%);
+  animation: scanline 2.2s ease-in-out infinite;
+}
+
+@keyframes scanline {
+  0%   { top: -100%; }
+  100% { top: 200%;  }
+}
+
+.logo-hex {
+  color: var(--accent);
+  filter: drop-shadow(0 0 8px rgba(65, 91, 68, 0.35));
+  position: relative;
+  z-index: 1;
+}
+
+.logo-spark {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  color: var(--accent2);
+  z-index: 2;
+}
+
+/* ── Text block ── */
+.text-reveal-container {
+  margin-bottom: 28px;
+}
+
+.loader-title {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.loader-title .accent-text {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Terminal prompt row ── */
+.terminal-prompt {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  color: var(--text-muted);
+}
+
+.terminal-prompt-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.terminal-prompt::after {
+  content: '█';
+  color: var(--accent);
+  animation: blink-cursor 1.1s step-end infinite;
+  font-size: 0.7rem;
+  margin-left: 2px;
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* ── Progress gauge ── */
+.loader-gauge-container {
+  width: 220px;
+  position: relative;
+}
+
+.loader-gauge-track {
+  width: 100%;
+  height: 2px;
+  background: var(--bg-surface-2);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.loader-gauge-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 100%);
+  border-radius: 99px;
+  box-shadow: 0 0 8px rgba(65, 91, 68, 0.5);
+  transition: width 0.04s linear;
+}
+
+.loader-gauge-percent {
+  margin-top: 9px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.06em;
+}

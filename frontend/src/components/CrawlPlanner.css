@@ -1,0 +1,339 @@
+/* frontend/src/components/CrawlPlanner.css */
+/* Modular Crawl Planner styles. Safe to delete. */
+
+.planner-card {
+  padding: 24px;
+  margin-bottom: 24px;
+  border-radius: var(--r-xl);
+  text-align: left;
+}
+
+.planner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.planner-header.loading {
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.planner-header .title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.btn-planner-reset {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all var(--t-fast);
+}
+
+.btn-planner-reset:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Stepper Timeline */
+.planner-progress-box {
+  margin-bottom: 24px;
+}
+
+.planner-bar-track {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.planner-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.4s ease-out;
+}
+
+.planner-pct {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-align: right;
+  margin-top: 6px;
+}
+
+.planner-log-status {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.planner-stepper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+  padding-left: 8px;
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0.35;
+  transition: opacity 0.3s ease;
+}
+
+.step-item.active {
+  opacity: 1;
+}
+
+.step-bullet {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.step-item.active .step-bullet {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: var(--accent-glow);
+}
+
+.step-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* Complexity Grid */
+.planner-complexity-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 600px) {
+  .planner-complexity-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.complexity-box {
+  padding: 14px 10px;
+  border-radius: var(--r-md);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.complexity-box .label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.complexity-box .value {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Warnings stack */
+.planner-section-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 6px;
+}
+
+.warnings-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.warning-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.warning-indicator {
+  font-size: 1.1rem;
+}
+
+.warning-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.warning-desc {
+  font-size: 0.77rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+  line-height: 1.35;
+}
+
+.warnings-clear-badge {
+  padding: 12px;
+  border-radius: var(--r-md);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+/* Compare table */
+.planner-compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+  font-size: 0.85rem;
+}
+
+.planner-compare-table th, .planner-compare-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.planner-compare-table th {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.planner-compare-table td {
+  color: var(--text-muted);
+}
+
+.planner-compare-table .recommended-col {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Estimates */
+.planner-estimates-box {
+  display: flex;
+  gap: 24px;
+  padding: 12px 18px;
+  border-radius: var(--r-md);
+  font-size: 0.82rem;
+  margin-bottom: 24px;
+}
+
+.estimate-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+}
+
+.estimate-item .lbl {
+  color: var(--text-muted);
+}
+
+.estimate-item .val {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* Action bar */
+.planner-action-bar {
+  display: flex;
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .planner-action-bar {
+    flex-direction: column;
+  }
+}
+
+.btn-apply-settings {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--accent) 0%, rgba(65, 91, 68, 0.6) 100%);
+  color: #E2D9CB;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: all var(--t-base);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+}
+
+.btn-apply-settings:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--accent-hover) 0%, var(--accent) 100%);
+  box-shadow: var(--accent-glow);
+  transform: translateY(-1px);
+}
+
+.btn-apply-settings.applied {
+  background: rgba(65, 91, 68, 0.12) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(65, 91, 68, 0.45) !important;
+  box-shadow: 0 0 20px rgba(65, 91, 68, 0.15) !important;
+  cursor: default;
+}
+
+.btn-planner-start {
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: var(--r-md);
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all var(--t-base);
+}
+
+.btn-planner-start:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent);
+}

@@ -71,3 +71,39 @@
   transition: all var(--t-fast);
 }
 .theme-toggle:hover { color: var(--accent); border-color: var(--accent-dim); }
+
+.nav-link-btn {
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 0;
+  position: relative;
+  transition: color var(--t-fast);
+}
+
+.nav-link-btn:hover {
+  color: var(--accent);
+}
+
+.nav-link-btn.active {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.nav-link-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 99px;
+}

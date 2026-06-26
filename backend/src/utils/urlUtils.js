@@ -40,4 +40,34 @@ function isSafeDomain(rawUrl) {
   }
 }
 
-module.exports = { normalizeUrl, isSafeDomain };
+/**
+ * Normalises a URL to a plain lookup key:
+ *   - Strips protocol (http:// / https://)
+ *   - Lowercases hostname
+ *   - Removes query string, hash fragment, and trailing slash
+ *
+ * Used for deduplicating discovered asset URLs and future relinking passes.
+ *
+ * @param {string} urlStr
+ * @returns {string}  e.g.  "example.com/assets/main.js"
+ */
+function normalizeForLookup(urlStr) {
+  try {
+    const u = new URL(urlStr);
+    let hostname = u.hostname.toLowerCase();
+    let pathname = u.pathname.replace(/\/+$/, '').replace(/\/+/g, '/');
+    if (pathname === '') pathname = '/';
+    return `${hostname}${pathname}`;
+  } catch (_e) {
+    // Fallback for relative or malformed URLs
+    return urlStr
+      .replace(/^https?:\/\//i, '')
+      .split('?')[0]
+      .split('#')[0]
+      .replace(/\/+$/, '')
+      .toLowerCase();
+  }
+}
+
+module.exports = { normalizeUrl, isSafeDomain, normalizeForLookup };
+

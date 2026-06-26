@@ -122,8 +122,54 @@
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── AI Planner Buttons Row ─────────────── */
+.btn-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.btn-planner-scan {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px 28px;
+  background: var(--bg-surface-2);
+  border: 1px solid rgba(139, 111, 71, 0.25);
+  border-radius: var(--r-md);
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all var(--t-base);
+  box-shadow: 0 4px 15px rgba(139, 111, 71, 0.08);
+}
+
+.btn-planner-scan:hover:not(:disabled) {
+  background: rgba(139, 111, 71, 0.16);
+  border-color: var(--accent2);
+  color: var(--accent2);
+  box-shadow: 0 0 20px rgba(139, 111, 71, 0.25);
+  transform: translateY(-1px);
+}
+
+.btn-planner-scan:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* ── Responsive ─────────────────────────── */
 @media (max-width: 640px) {
   .card-main { padding: 24px 20px; border-radius: var(--r-lg); }
   .card       { padding: 20px 16px; }
+  .btn-actions-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 }

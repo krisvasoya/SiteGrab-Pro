@@ -1,8 +1,9 @@
 // ─────────────────────────────────────────
 //  services/assetCollector.js
-//  Extracts ALL asset URLs — same domain AND external CDNs
+//  Extracts ALL asset URLs — same domain AND whitelisted CDNs
 // ─────────────────────────────────────────
 const { URL } = require('url');
+const { isCdnHost, isTrackerHost, isCriticalCdnExtension } = require('../config/cdnWhitelist');
 
 const ASSET_SELECTORS = {
   css:    ['link[rel="stylesheet"][href]'],
@@ -48,6 +49,7 @@ const ATTR_MAP = {
  */
 function extractAssetUrls($, pageUrl, enabledTypes) {
   const urls = new Set();
+  const pageOriginHostname = (() => { try { return new URL(pageUrl).hostname.toLowerCase(); } catch { return ''; } })();
 
   const addUrl = (rawHref) => {
     if (!rawHref || typeof rawHref !== 'string') return;
@@ -64,7 +66,27 @@ function extractAssetUrls($, pageUrl, enabledTypes) {
       const abs = new URL(rawHref, pageUrl).href;
       // Only allow http/https — skip ftp, mailto etc.
       if (!abs.startsWith('http://') && !abs.startsWith('https://')) return;
-      urls.add(abs);
+
+      const parsed   = new URL(abs);
+      const hostname = parsed.hostname.toLowerCase();
+      const isSameOrigin = hostname === pageOriginHostname ||
+        hostname.endsWith('.' + pageOriginHostname) ||
+        pageOriginHostname.endsWith('.' + hostname);
+
+      if (isSameOrigin) {
+        // Always include same-origin assets
+        urls.add(abs);
+        return;
+      }
+
+      // Drop known tracker / analytics hosts silently
+      if (isTrackerHost(hostname)) return;
+
+      // Allow whitelisted CDN hosts for critical structural file types only
+      if (isCdnHost(hostname) && isCriticalCdnExtension(parsed.pathname)) {
+        urls.add(abs);
+      }
+      // All other external URLs are intentionally dropped
     } catch { /* ignore malformed URLs */ }
   };
 
@@ -90,10 +112,15 @@ function extractAssetUrls($, pageUrl, enabledTypes) {
     }
   }
 
-  // ── CSS url() in <style> blocks ───────
+  // ── CSS url() and @import in <style> blocks ──
   $('style').each((_, el) => {
     const css = $(el).html() || '';
+    // url() references (background-image, src, etc.)
     for (const m of css.matchAll(/url\(\s*['"]?([^'")\s]+)['"]?\s*\)/g)) {
+      addUrl(m[1]);
+    }
+    // @import "url" and @import url("url") — critical for Google Fonts
+    for (const m of css.matchAll(/@import\s+(?:url\(\s*)?['"]([^'"]+)['"]\s*\)?/g)) {
       addUrl(m[1]);
     }
   });

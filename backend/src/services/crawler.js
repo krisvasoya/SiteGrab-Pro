@@ -1,7 +1,6 @@
-// ─────────────────────────────────────────
-//  services/crawler.js — Axios + Cheerio Crawler
-//  Fixed: SSL bypass + full browser headers + http fallback
-// ─────────────────────────────────────────
+// backend/src/services/crawler.js
+// Standard Axios + Cheerio Crawler with support for rate-limits and concurrency.
+
 const cheerio = require('cheerio');
 const axios   = require('axios');
 const https   = require('https');
@@ -14,9 +13,7 @@ const MAX_PAGES      = parseInt(process.env.MAX_PAGES_DEFAULT) || 20;
 const CRAWL_DELAY_MS = parseInt(process.env.CRAWL_DELAY_MS)    || 800;
 const AXIOS_TIMEOUT  = parseInt(process.env.AXIOS_TIMEOUT)     || 20000;
 
-// ── Shared axios instance ─────────────────
-// rejectUnauthorized:false  → fixes SSL cert errors (gcet.ac.in etc.)
-// Full Chrome headers       → bypasses basic bot detection
+// Shared Axios client with SSL bypasses & user-agent rotation headers
 const httpClient = axios.create({
   timeout:      AXIOS_TIMEOUT,
   maxRedirects: 10,
@@ -30,25 +27,22 @@ const httpClient = axios.create({
       'text/html,application/xhtml+xml,application/xml;q=0.9,' +
       'image/avif,image/webp,image/apng,*/*;q=0.8',
     'Accept-Language':           'en-US,en;q=0.9',
-    'Accept-Encoding':           'gzip, deflate, br',
-    'Cache-Control':             'no-cache',
-    'Pragma':                    'no-cache',
-    'Sec-Fetch-Dest':            'document',
-    'Sec-Fetch-Mode':            'navigate',
-    'Sec-Fetch-Site':            'none',
-    'Sec-Fetch-User':            '?1',
-    'Upgrade-Insecure-Requests': '1',
     'Connection':                'keep-alive',
   },
 });
 
 class CrawlerService {
-  constructor({ jobId, respectRobots, depth, assetTypes, onLog }) {
+  constructor({ jobId, respectRobots, depth, assetTypes, onLog, concurrency, requestDelay }) {
     this.jobId         = jobId;
     this.respectRobots = respectRobots;
     this.maxDepth      = Math.min(depth, parseInt(process.env.MAX_CRAWL_DEPTH) || 10);
     this.assetTypes    = assetTypes;
     this.onLog         = onLog;
+    
+    // Fallback options
+    this.concurrency   = concurrency || parseInt(process.env.CONCURRENCY_LIMIT) || 5;
+    this.requestDelay  = requestDelay !== undefined ? requestDelay : CRAWL_DELAY_MS;
+
     this.visited       = new Set();
     this.assetUrls     = new Set();
     this.brokenLinks   = [];
@@ -56,7 +50,7 @@ class CrawlerService {
   }
 
   log(message, percent = null) {
-    console.log(`[${this.jobId}] ${message}`);
+    console.log(`[Crawler:${this.jobId}] ${message}`);
     this.onLog('progress', { message, ...(percent !== null ? { percent } : {}) });
   }
 
@@ -64,18 +58,17 @@ class CrawlerService {
     const origin   = new URL(startUrl).origin;
     const hostname = new URL(startUrl).hostname;
 
-    // ── HTTPS → HTTP fallback ─────────────
-    // Some sites (Indian universities, old servers) reject HTTPS requests
+    // HTTP / HTTPS Auto-fallback
     let workingUrl = startUrl;
     try {
       await httpClient.head(startUrl, { timeout: 6000 });
     } catch {
       const fallback = startUrl.replace(/^https:\/\//, 'http://');
-      this.log(`HTTPS failed — retrying with HTTP: ${fallback}`);
+      this.log(`HTTPS connection failed — attempting HTTP fallback: ${fallback}`);
       workingUrl = fallback;
     }
 
-    // ── robots.txt ────────────────────────
+    // robots.txt Parser
     let robotsRules = null;
     if (this.respectRobots) {
       try {
@@ -87,11 +80,11 @@ class CrawlerService {
       }
     }
 
-    // ── BFS crawl ─────────────────────────
     const queue = [{ url: workingUrl, depth: 0 }];
     this.visited.add(workingUrl);
-    this.visited.add(startUrl); // mark both variants as visited
+    this.visited.add(startUrl);
 
+    // BFS crawl loop
     while (queue.length > 0 && this.pages.length < MAX_PAGES) {
       const { url: currentUrl, depth: currentDepth } = queue.shift();
 
@@ -101,16 +94,20 @@ class CrawlerService {
       }
 
       this.log(
-        `Crawling [${this.pages.length + 1}]: ${currentUrl}`,
+        `Crawling page [${this.pages.length + 1}]: ${currentUrl}`,
         Math.round((this.pages.length / MAX_PAGES) * 70)
       );
+
+      // Support custom crawler throttling delay settings
+      if (this.requestDelay > 0) {
+        await this._delay(this.requestDelay);
+      }
 
       try {
         const response = await httpClient.get(currentUrl, {
           headers: { Referer: origin },
         });
 
-        // If server returns a binary file, treat it as an asset
         const ct = response.headers['content-type'] || '';
         if (!ct.includes('html') && !ct.includes('text')) {
           this.assetUrls.add(currentUrl);
@@ -119,27 +116,21 @@ class CrawlerService {
 
         const html = response.data;
         if (typeof html !== 'string' || html.trim().length === 0) {
-          this.log(`Empty or non-string response from: ${currentUrl}`);
+          this.log(`Empty page body: ${currentUrl}`);
           continue;
         }
 
         const $ = cheerio.load(html);
-
-        // Collect assets
         const pageAssets = extractAssetUrls($, currentUrl, this.assetTypes);
         pageAssets.forEach((u) => this.assetUrls.add(u));
 
         this.pages.push({ url: currentUrl, html });
 
-        // Enqueue same-domain links
         if (currentDepth < this.maxDepth) {
           $('a[href]').each((_, el) => {
             try {
               const hrefAttr = $(el).attr('href');
-              if (!hrefAttr) return;
-
-              // Skip non-page links
-              if (/^(mailto:|tel:|#|javascript:)/i.test(hrefAttr)) return;
+              if (!hrefAttr || /^(mailto:|tel:|#|javascript:)/i.test(hrefAttr)) return;
 
               const absoluteUrl = new URL(hrefAttr, currentUrl).href;
               const parsedUrl   = new URL(absoluteUrl);
@@ -153,7 +144,9 @@ class CrawlerService {
                 this.visited.add(absoluteUrl);
                 queue.push({ url: absoluteUrl, depth: currentDepth + 1 });
               }
-            } catch { /* ignore malformed hrefs */ }
+            } catch (e) {
+              // Ignore invalid link structures
+            }
           });
         }
       } catch (err) {
@@ -162,25 +155,22 @@ class CrawlerService {
         this.log(`Failed [${reason}]: ${currentUrl}`);
         this.brokenLinks.push({ url: currentUrl, reason });
       }
-
-      await this._delay(CRAWL_DELAY_MS);
     }
 
-    // Throw a clear error if nothing was fetched at all
     if (this.pages.length === 0) {
-      throw new Error(
-        `Could not fetch any page from "${hostname}". ` +
-        'The site may block automated requests, require login, or have SSL issues.'
-      );
+      throw new Error(`Could not fetch any page from "${hostname}". Checks your connection or robots.txt settings.`);
     }
 
-    // ── Download assets ───────────────────
-    this.log('All pages crawled. Downloading assets…', 72);
+    this.log('Pages crawled. Downloading assets pool…', 72);
     const assets = await downloadAssets(
       [...this.assetUrls],
       hostname,
       this.brokenLinks,
-      (msg, p) => this.log(msg, p)
+      (msg, p) => this.log(msg, p),
+      {
+        concurrency: this.concurrency,
+        requestDelay: this.requestDelay
+      }
     );
 
     return { pages: this.pages, assets, brokenLinks: this.brokenLinks };

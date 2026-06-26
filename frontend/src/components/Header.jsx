@@ -1,10 +1,10 @@
 // components/Header.jsx
 import React, { useState, useEffect } from 'react';
-import { Sun, Moon, Code2 } from 'lucide-react';
+import { Sun, Moon, Code2, Info } from 'lucide-react';
 import Logo from './Logo';
 import './Header.css';
 
-export default function Header() {
+export default function Header({ showAbout, setShowAbout }) {
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('sitegrab-theme') || 'light';
   });
@@ -21,12 +21,25 @@ export default function Header() {
   return (
     <header className="site-header glass">
       <div className="header-inner">
-        <div className="header-logo">
+        <div
+          className="header-logo"
+          onClick={() => setShowAbout(false)}
+          style={{ cursor: 'pointer', userSelect: 'none' }}
+        >
           <Logo className="logo-icon" size={32} />
           <span className="logo-text">SiteGrab <strong>Pro</strong></span>
         </div>
 
         <nav className="header-nav">
+          <button
+            className={`nav-link-btn ${showAbout ? 'active' : ''}`}
+            onClick={() => setShowAbout(prev => !prev)}
+            aria-label="Toggle About Page"
+          >
+            <Info size={18} />
+            <span>About</span>
+          </button>
+
           <a
             href="https://github.com/krisvasoya"
             target="_blank"

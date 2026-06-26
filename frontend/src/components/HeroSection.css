@@ -1,7 +1,7 @@
 /* HeroSection.css */
 .hero {
   text-align: center;
-  padding: 60px 0 40px;
+  padding: 60px 0 30px;
 }
 
 .hero-badge {
@@ -17,30 +17,16 @@
   color: var(--accent);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  margin-bottom: 24px;
-}
-
-.badge-dot {
-  width: 6px;
-  height: 6px;
-  background: var(--accent);
-  border-radius: 50%;
-  box-shadow: 0 0 6px var(--accent);
-  animation: pulse-dot 2s ease infinite;
-}
-
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.6; transform: scale(0.8); }
+  margin-bottom: 28px;
 }
 
 .hero-title {
-  font-size: clamp(2rem, 5vw, 3rem);
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
   font-weight: 700;
   line-height: 1.15;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
   color: var(--text-primary);
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
 .hero-accent {
@@ -51,30 +37,39 @@
 }
 
 .hero-sub {
-  font-size: 1.05rem;
+  font-size: 1.08rem;
   color: var(--text-secondary);
-  max-width: 520px;
+  max-width: 600px;
   margin: 0 auto 36px;
-  line-height: 1.7;
+  line-height: 1.75;
 }
 
+/* ── Stat chips ─────────────────────────────────── */
 .hero-stats {
   display: flex;
   gap: 12px;
   justify-content: center;
   flex-wrap: wrap;
+  margin-bottom: 64px;
 }
 
 .stat-chip {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   border-radius: var(--r-md);
-  padding: 12px 18px;
+  padding: 12px 20px;
   text-align: left;
+  transition: transform var(--t-base);
 }
 
-.stat-icon { font-size: 1.3rem; }
+.stat-chip:hover { transform: translateY(-3px); }
+
+.stat-icon {
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+}
 
 .stat-label {
   font-size: 0.875rem;
@@ -85,4 +80,126 @@
 .stat-sub {
   font-size: 0.75rem;
   color: var(--text-muted);
+}
+
+/* ── Features Showcase ──────────────────────────── */
+.features-showcase {
+  margin-top: 10px;
+  text-align: left;
+  padding: 0 10px;
+}
+
+.showcase-divider {
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent) 0%, transparent 100%);
+  border-radius: 99px;
+  margin-bottom: 22px;
+}
+
+.showcase-title {
+  font-size: clamp(1.4rem, 4vw, 1.85rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.showcase-subtitle {
+  font-size: 0.98rem;
+  color: var(--text-secondary);
+  margin-bottom: 36px;
+  max-width: 620px;
+  line-height: 1.65;
+}
+
+.showcase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 22px;
+}
+
+/* ── Feature card ───────────────────────────────── */
+.feat-card {
+  position: relative;
+  border-radius: var(--r-lg);
+  padding: 26px 24px 20px;
+  overflow: hidden;
+  transition: transform var(--t-base), border-color var(--t-base);
+}
+
+.feat-card:hover {
+  transform: translateY(-5px);
+}
+
+/* Dynamic colour glow on hover */
+.feat-card-glow {
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--glow-color) 0%, transparent 70%);
+  opacity: 0;
+  filter: blur(22px);
+  transition: opacity 0.4s ease, transform 0.5s ease;
+  pointer-events: none;
+}
+
+.feat-card:hover .feat-card-glow {
+  opacity: 0.22;
+  transform: scale(2.2);
+}
+
+.feat-icon-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--r-sm);
+  margin-bottom: 18px;
+}
+
+.feat-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+
+.feat-desc {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.65;
+  margin-bottom: 18px;
+}
+
+/* CountUp stat row */
+.feat-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.feat-stat-num {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.feat-stat-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 768px) {
+  .hero { padding: 40px 0 20px; }
+  .features-showcase { margin-top: 30px; }
+  .feat-card { padding: 20px 18px 16px; }
 }

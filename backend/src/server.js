@@ -48,7 +48,9 @@ const limiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Too many requests — please try again in 15 minutes.' },
 });
-app.use('/api/', limiter);
+if (process.env.NODE_ENV !== 'development') {
+  app.use('/api/', limiter);
+}
 
 // ── Body parsing ─────────────────────────
 app.use(express.json({ limit: '1mb' }));
