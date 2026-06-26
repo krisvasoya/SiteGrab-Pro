@@ -89,11 +89,7 @@ export function ParallaxSection({ children, strength = 0.18, className = '' }) {
 export function CountUp({ target, suffix = '', duration = 1.8, className = '' }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: '-60px' });
-  const motionValue = useTransform(
-    useScroll({ target: ref }).scrollYProgress,
-    [0, 1],
-    [0, target]
-  );
+
 
   // Simple integer ticker using React state
   const [display, setDisplay] = React.useState(0);

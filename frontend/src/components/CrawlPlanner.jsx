@@ -65,7 +65,7 @@ export default function CrawlPlanner({
 
   // 2. Report dashboard state
   if (status === 'completed' && report) {
-    const { architecture, complexity, loadTimeMs, linksCount, assetsCount, warnings, timeEstimate, potentialFileCount } = report;
+    const { architecture, complexity, loadTimeMs, linksCount, warnings, timeEstimate, potentialFileCount } = report;
 
     return (
       <div className="glass card planner-card font-sans">
