@@ -4,7 +4,7 @@
 
 const cheerio = require('cheerio');
 const { URL } = require('url');
-const { getBrowser } = require('../utils/browser');
+const { getBrowser, createStealthPage } = require('../utils/browser');
 const { extractAssetUrls } = require('./assetCollector');
 const { downloadAssets } = require('./downloader');
 
@@ -73,7 +73,13 @@ class DeepCrawlerService {
       throw new Error('Puppeteer browser is not initialized. Classic crawl falls back.');
     }
 
-    const page = await browser.newPage();
+    let page;
+    try {
+      page = await createStealthPage(browser);
+    } catch {
+      page = await browser.newPage();
+    }
+
     try {
       // Hijack Canvas 2D / 3D buffer preservation
       await page.evaluateOnNewDocument(() => {
@@ -114,6 +120,12 @@ class DeepCrawlerService {
 
         try {
           await page.goto(url, { waitUntil: 'networkidle2', timeout: PAGE_TIMEOUT });
+
+          const title = await page.title().catch(() => '');
+          if (title.includes('One moment') || title.includes('Attention Required') || title.includes('Just a moment')) {
+            this.log(`Anti-bot challenge detected on ${url} — waiting for JS challenge completion...`);
+            await new Promise(r => setTimeout(r, 6000));
+          }
 
           // Smart autoscroll: incrementally scrolls 400 px every 150 ms to
           // trigger all lazy-loaded images, deferred scripts, and CSS.

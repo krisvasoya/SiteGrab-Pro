@@ -31,6 +31,29 @@ const httpClient = axios.create({
   },
 });
 
+async function fetchPageStealth(targetUrl) {
+  try {
+    const { getBrowser, createStealthPage } = require('../utils/browser');
+    const browser = getBrowser();
+    let page;
+    try {
+      page = await createStealthPage(browser);
+    } catch {
+      page = await browser.newPage();
+    }
+    await page.goto(targetUrl, { waitUntil: 'networkidle2', timeout: 25000 }).catch(() => {});
+    const title = await page.title().catch(() => '');
+    if (title.includes('One moment') || title.includes('Attention Required') || title.includes('Just a moment')) {
+      await new Promise(r => setTimeout(r, 6000));
+    }
+    const html = await page.content();
+    await page.close();
+    return html;
+  } catch (e) {
+    return null;
+  }
+}
+
 class CrawlerService {
   constructor({ jobId, respectRobots, depth, assetTypes, onLog, concurrency, requestDelay }) {
     this.jobId         = jobId;
@@ -98,62 +121,77 @@ class CrawlerService {
         Math.round((this.pages.length / MAX_PAGES) * 70)
       );
 
-      // Support custom crawler throttling delay settings
       if (this.requestDelay > 0) {
         await this._delay(this.requestDelay);
       }
 
+      let html = null;
       try {
         const response = await httpClient.get(currentUrl, {
           headers: { Referer: origin },
         });
 
         const ct = response.headers['content-type'] || '';
-        if (!ct.includes('html') && !ct.includes('text')) {
+        if (!ct.includes('html') && !ct.includes('text') && typeof response.data !== 'string') {
           this.assetUrls.add(currentUrl);
           continue;
         }
 
-        const html = response.data;
-        if (typeof html !== 'string' || html.trim().length === 0) {
-          this.log(`Empty page body: ${currentUrl}`);
-          continue;
-        }
-
-        const $ = cheerio.load(html);
-        const pageAssets = extractAssetUrls($, currentUrl, this.assetTypes);
-        pageAssets.forEach((u) => this.assetUrls.add(u));
-
-        this.pages.push({ url: currentUrl, html });
-
-        if (currentDepth < this.maxDepth) {
-          $('a[href]').each((_, el) => {
-            try {
-              const hrefAttr = $(el).attr('href');
-              if (!hrefAttr || /^(mailto:|tel:|#|javascript:)/i.test(hrefAttr)) return;
-
-              const absoluteUrl = new URL(hrefAttr, currentUrl).href;
-              const parsedUrl   = new URL(absoluteUrl);
-
-              if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') return;
-
-              const assetHostname = parsedUrl.hostname.replace(/^www\./, '');
-              const baseHostname  = hostname.replace(/^www\./, '');
-
-              if (assetHostname === baseHostname && !this.visited.has(absoluteUrl)) {
-                this.visited.add(absoluteUrl);
-                queue.push({ url: absoluteUrl, depth: currentDepth + 1 });
-              }
-            } catch (e) {
-              // Ignore invalid link structures
-            }
-          });
-        }
+        html = response.data;
       } catch (err) {
-        const code   = err.response?.status;
-        const reason = code ? `HTTP ${code}` : err.message;
-        this.log(`Failed [${reason}]: ${currentUrl}`);
-        this.brokenLinks.push({ url: currentUrl, reason });
+        this.log(`Axios fetch restricted on ${currentUrl} (${err.message}) — attempting stealth browser fallback...`);
+      }
+
+      // Check if response is non-string (e.g. anti-bot JSON error) or contains anti-bot challenge
+      if (
+        !html ||
+        typeof html !== 'string' ||
+        html.includes('Access denied by Imunify360') ||
+        html.includes('One moment, please') ||
+        html.includes('Attention Required!') ||
+        html.trim().length === 0
+      ) {
+        this.log(`Anti-bot protection active on ${currentUrl} — running stealth browser bypass...`);
+        const stealthHtml = await fetchPageStealth(currentUrl);
+        if (stealthHtml && typeof stealthHtml === 'string' && stealthHtml.trim().length > 0) {
+          html = stealthHtml;
+        }
+      }
+
+      if (typeof html !== 'string' || html.trim().length === 0) {
+        this.log(`Could not resolve HTML content for: ${currentUrl}`);
+        this.brokenLinks.push({ url: currentUrl, reason: 'Anti-bot or empty body' });
+        continue;
+      }
+
+      const $ = cheerio.load(html);
+      const pageAssets = extractAssetUrls($, currentUrl, this.assetTypes);
+      pageAssets.forEach((u) => this.assetUrls.add(u));
+
+      this.pages.push({ url: currentUrl, html });
+
+      if (currentDepth < this.maxDepth) {
+        $('a[href]').each((_, el) => {
+          try {
+            const hrefAttr = $(el).attr('href');
+            if (!hrefAttr || /^(mailto:|tel:|#|javascript:)/i.test(hrefAttr)) return;
+
+            const absoluteUrl = new URL(hrefAttr, currentUrl).href;
+            const parsedUrl   = new URL(absoluteUrl);
+
+            if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') return;
+
+            const assetHostname = parsedUrl.hostname.replace(/^www\./, '');
+            const baseHostname  = hostname.replace(/^www\./, '');
+
+            if (assetHostname === baseHostname && !this.visited.has(absoluteUrl)) {
+              this.visited.add(absoluteUrl);
+              queue.push({ url: absoluteUrl, depth: currentDepth + 1 });
+            }
+          } catch (e) {
+            // Ignore invalid link structures
+          }
+        });
       }
     }
 

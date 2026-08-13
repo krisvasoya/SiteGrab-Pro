@@ -16,6 +16,8 @@ async function initBrowser() {
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
       '--disable-gpu',
+      '--disable-blink-features=AutomationControlled',
+      '--window-size=1920,1080',
     ],
   });
 
@@ -26,6 +28,25 @@ async function initBrowser() {
 
   console.log('✅ Puppeteer browser ready.');
   return browserInstance;
+}
+
+/**
+ * Creates a stealth page that bypasses navigator.webdriver detection and Cloudflare / WAF challenges.
+ */
+async function createStealthPage(browser) {
+  const page = await browser.newPage();
+  await page.setViewport({ width: 1920, height: 1080 });
+  await page.setUserAgent(
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+  );
+  await page.setExtraHTTPHeaders({
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+  });
+  await page.evaluateOnNewDocument(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+  });
+  return page;
 }
 
 function getBrowser() {
@@ -42,4 +63,5 @@ async function closeBrowser() {
   }
 }
 
-module.exports = { initBrowser, getBrowser, closeBrowser };
+module.exports = { initBrowser, getBrowser, closeBrowser, createStealthPage };
+

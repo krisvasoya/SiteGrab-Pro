@@ -3,9 +3,12 @@
 // Downloads assets with adaptive concurrency, jitter retries, and optional plugin integrity checks.
 
 const axios = require('axios');
+const https = require('https');
 const { URL } = require('url');
 const path = require('path');
 const featureFlags = require('../config/featureFlags');
+
+const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 
 // Safe dynamic imports for optional integrity validations
 let validateIntegrity = null;
@@ -163,6 +166,7 @@ async function downloadWithBackoff(url, session, retriesLeft) {
       responseType:     'arraybuffer',
       timeout:          REQUEST_TIMEOUT,
       maxContentLength: MAX_FILE_BYTES,
+      httpsAgent,
       headers:          session.buildHeaders(currentUrl),
     });
 

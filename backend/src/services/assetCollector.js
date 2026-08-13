@@ -1,55 +1,44 @@
 // ─────────────────────────────────────────
 //  services/assetCollector.js
-//  Extracts ALL asset URLs — same domain AND whitelisted CDNs
+//  Extracts ALL asset URLs — same domain, subdomains, CDNs, and media hosts
 // ─────────────────────────────────────────
 const { URL } = require('url');
+const path = require('path');
 const { isCdnHost, isTrackerHost, isCriticalCdnExtension } = require('../config/cdnWhitelist');
 
-const ASSET_SELECTORS = {
-  css:    ['link[rel="stylesheet"][href]'],
-  js:     ['script[src]'],
-  images: [
-    'img[src]', 'img[data-src]', 'img[data-lazy-src]',
-    'source[srcset]', 'source[src]',
-    'link[rel="icon"][href]',
-    'link[rel="apple-touch-icon"][href]',
-    'meta[property="og:image"][content]',
-  ],
-  fonts:  [
-    'link[rel="preload"][as="font"][href]',
-    'link[rel="stylesheet"][href*="fonts"]',
-  ],
-  video:  ['video[src]', 'video source[src]'],
-  audio:  ['audio[src]', 'audio source[src]'],
-};
+const STATIC_EXTENSIONS = new Set([
+  '.css', '.js', '.mjs', '.cjs',
+  '.png', '.jpg', '.jpeg', '.gif', '.webp', '.avif', '.svg', '.ico', '.bmp', '.tiff',
+  '.woff', '.woff2', '.ttf', '.otf', '.eot',
+  '.mp4', '.webm', '.ogg', '.mp3', '.wav',
+  '.pdf', '.glb', '.gltf', '.hdr', '.obj', '.fbx', '.json'
+]);
 
-const ATTR_MAP = {
-  'link[rel="stylesheet"][href]':              'href',
-  'link[rel="stylesheet"][href*="fonts"]':     'href',
-  'script[src]':                               'src',
-  'img[src]':                                  'src',
-  'img[data-src]':                             'data-src',
-  'img[data-lazy-src]':                        'data-lazy-src',
-  'source[srcset]':                            'srcset',
-  'source[src]':                               'src',
-  'link[rel="icon"][href]':                    'href',
-  'link[rel="apple-touch-icon"][href]':        'href',
-  'meta[property="og:image"][content]':        'content',
-  'link[rel="preload"][as="font"][href]':       'href',
-  'video[src]':                                'src',
-  'video source[src]':                         'src',
-  'audio[src]':                                'src',
-  'audio source[src]':                         'src',
-};
+function hasStaticExtension(pathname) {
+  if (!pathname) return false;
+  const cleanPath = pathname.split('?')[0].split('#')[0];
+  const ext = path.extname(cleanPath).toLowerCase();
+  return STATIC_EXTENSIONS.has(ext);
+}
+
+function getApexDomain(hostname) {
+  if (!hostname) return '';
+  const parts = hostname.toLowerCase().split('.');
+  if (parts.length <= 2) return hostname.toLowerCase();
+  // Common 2-part TLDs (co.uk, ac.in, com.au, etc.)
+  if (['ac', 'co', 'gov', 'edu', 'com', 'org', 'net'].includes(parts[parts.length - 2])) {
+    return parts.slice(-3).join('.');
+  }
+  return parts.slice(-2).join('.');
+}
 
 /**
  * Returns absolute URLs of all assets found in the page.
- * Collects assets from ANY domain — not just same hostname.
- * This is critical for sites that load assets from CDNs or subdomains.
  */
-function extractAssetUrls($, pageUrl, enabledTypes) {
+function extractAssetUrls($, pageUrl, enabledTypes = ['html', 'css', 'js', 'images', 'fonts']) {
   const urls = new Set();
   const pageOriginHostname = (() => { try { return new URL(pageUrl).hostname.toLowerCase(); } catch { return ''; } })();
+  const pageApex = getApexDomain(pageOriginHostname);
 
   const addUrl = (rawHref) => {
     if (!rawHref || typeof rawHref !== 'string') return;
@@ -58,68 +47,99 @@ function extractAssetUrls($, pageUrl, enabledTypes) {
       rawHref.startsWith('data:') ||
       rawHref.startsWith('blob:') ||
       rawHref.startsWith('javascript:') ||
+      rawHref.startsWith('mailto:') ||
+      rawHref.startsWith('tel:') ||
       rawHref === '#' ||
       rawHref === ''
     ) return;
 
     try {
       const abs = new URL(rawHref, pageUrl).href;
-      // Only allow http/https — skip ftp, mailto etc.
       if (!abs.startsWith('http://') && !abs.startsWith('https://')) return;
 
       const parsed   = new URL(abs);
       const hostname = parsed.hostname.toLowerCase();
+
+      // Silent drop for tracking & telemetry hosts
+      if (isTrackerHost(hostname)) return;
+
+      const hostApex = getApexDomain(hostname);
       const isSameOrigin = hostname === pageOriginHostname ||
+        hostApex === pageApex ||
         hostname.endsWith('.' + pageOriginHostname) ||
         pageOriginHostname.endsWith('.' + hostname);
 
-      if (isSameOrigin) {
-        // Always include same-origin assets
-        urls.add(abs);
-        return;
-      }
-
-      // Drop known tracker / analytics hosts silently
-      if (isTrackerHost(hostname)) return;
-
-      // Allow whitelisted CDN hosts for critical structural file types only
-      if (isCdnHost(hostname) && isCriticalCdnExtension(parsed.pathname)) {
+      // Collect same-origin assets, trusted CDN assets, or any media/static files
+      if (isSameOrigin || isCdnHost(hostname) || isCriticalCdnExtension(parsed.pathname) || hasStaticExtension(parsed.pathname)) {
         urls.add(abs);
       }
-      // All other external URLs are intentionally dropped
     } catch { /* ignore malformed URLs */ }
   };
 
-  // ── DOM selector extraction ───────────
-  for (const type of enabledTypes) {
-    const selectors = ASSET_SELECTORS[type] || [];
-    for (const sel of selectors) {
-      const attr = ATTR_MAP[sel];
-      if (!attr) continue;
-      $(sel).each((_, el) => {
-        const val = $(el).attr(attr);
-        if (!val) return;
-        // Handle srcset="url 1x, url2 2x" format
-        if (attr === 'srcset') {
-          val.split(',').forEach((part) => {
-            const u = part.trim().split(/\s+/)[0];
-            if (u) addUrl(u);
-          });
-        } else {
-          addUrl(val);
-        }
-      });
+  // ── Universal element attribute scanning ──
+  $('link[href]').each((_, el) => {
+    const rel = ($(el).attr('rel') || '').toLowerCase();
+    const href = $(el).attr('href');
+    if (rel.includes('stylesheet') || rel.includes('icon') || rel.includes('preload') || rel.includes('font') || hasStaticExtension(href)) {
+      addUrl(href);
     }
+  });
+
+  $('script[src]').each((_, el) => {
+    addUrl($(el).attr('src'));
+  });
+
+  if (enabledTypes.includes('images') || enabledTypes.includes('html')) {
+    $('img').each((_, el) => {
+      addUrl($(el).attr('src'));
+      addUrl($(el).attr('data-src'));
+      addUrl($(el).attr('data-lazy-src'));
+      addUrl($(el).attr('data-original'));
+      addUrl($(el).attr('data-actualsrc'));
+      addUrl($(el).attr('data-url'));
+      
+      const srcset = $(el).attr('srcset') || $(el).attr('data-srcset');
+      if (srcset) {
+        srcset.split(',').forEach((part) => {
+          const u = part.trim().split(/\s+/)[0];
+          if (u) addUrl(u);
+        });
+      }
+    });
+
+    $('source').each((_, el) => {
+      addUrl($(el).attr('src'));
+      const srcset = $(el).attr('srcset');
+      if (srcset) {
+        srcset.split(',').forEach((part) => {
+          const u = part.trim().split(/\s+/)[0];
+          if (u) addUrl(u);
+        });
+      }
+    });
+
+    $('meta[property="og:image"], meta[name="twitter:image"], meta[property="og:logo"]').each((_, el) => {
+      addUrl($(el).attr('content'));
+    });
+
+    $('svg image').each((_, el) => {
+      addUrl($(el).attr('href') || $(el).attr('xlink:href'));
+    });
+  }
+
+  if (enabledTypes.includes('video') || enabledTypes.includes('audio') || enabledTypes.includes('html')) {
+    $('video, audio, embed, object').each((_, el) => {
+      addUrl($(el).attr('src'));
+      addUrl($(el).attr('data'));
+    });
   }
 
   // ── CSS url() and @import in <style> blocks ──
   $('style').each((_, el) => {
     const css = $(el).html() || '';
-    // url() references (background-image, src, etc.)
     for (const m of css.matchAll(/url\(\s*['"]?([^'")\s]+)['"]?\s*\)/g)) {
       addUrl(m[1]);
     }
-    // @import "url" and @import url("url") — critical for Google Fonts
     for (const m of css.matchAll(/@import\s+(?:url\(\s*)?['"]([^'"]+)['"]\s*\)?/g)) {
       addUrl(m[1]);
     }
@@ -134,30 +154,15 @@ function extractAssetUrls($, pageUrl, enabledTypes) {
   });
 
   // ── data-src / data-background (lazy load) ──
-  $('[data-src],[data-background],[data-bg]').each((_, el) => {
+  $('[data-src],[data-background],[data-bg],[data-image]').each((_, el) => {
     addUrl($(el).attr('data-src'));
     addUrl($(el).attr('data-background'));
     addUrl($(el).attr('data-bg'));
+    addUrl($(el).attr('data-image'));
   });
-
-  // ── <link rel="preload"> any asset ────
-  $('link[rel="preload"][href]').each((_, el) => {
-    addUrl($(el).attr('href'));
-  });
-
-  // ── 3D model paths from inline scripts ─
-  if (enabledTypes.includes('models')) {
-    $('script:not([src])').each((_, el) => {
-      const code = $(el).html() || '';
-      for (const m of code.matchAll(
-        /\.load\s*\(\s*['"`]([^'"`\s]+\.(?:glb|gltf|obj|fbx|hdr))['"`]/gi
-      )) {
-        addUrl(m[1]);
-      }
-    });
-  }
 
   return [...urls];
 }
 
-module.exports = { extractAssetUrls };
+module.exports = { extractAssetUrls, hasStaticExtension, getApexDomain };
+
